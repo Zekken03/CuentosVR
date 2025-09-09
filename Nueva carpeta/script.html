@@ -1,0 +1,190 @@
+<!-- <script>
+// Componente para controlar el movimiento, salto e interacción
+AFRAME.registerComponent("control-mando", {
+  init: function () {
+    this.botonSaltoPresionado = false;
+    this.botonInteraccionPresionado = false;
+    this.saltoEnAire = false;  // Para asegurarse de que solo se salte cuando esté en el suelo
+    this.alturaSalto = 5;  // Altura del salto (aumentada)
+    this.gravedad = -0.02;  // Fuerza de gravedad (más suave)
+    this.velocidadSalto = 0;  // Velocidad del salto
+    this.velocidadAscenso = 0.3;  // Velocidad de ascenso para un salto más suave
+  },
+  tick: function () {
+    const gamepads = navigator.getGamepads();
+    const gp = gamepads[0];
+    if (!gp) return;
+  
+    // Detectar el tipo de control (Xbox o PS)
+    const esXbox = gp.id.toLowerCase().includes("xbox");
+  
+    // Botones de Xbox: A (0), X (2)
+    const botonSaltoIndex = esXbox ? 0 : 0; // A en Xbox (botón 0)
+    const botonInteraccionIndex = esXbox ? 2 : 2; // X en Xbox (botón 2)
+  
+    // Detectar si los botones están presionados
+    if (gp.buttons[botonSaltoIndex].pressed && !this.botonSaltoPresionado && !this.saltoEnAire) {
+      this.botonSaltoPresionado = true;
+      console.log("Saltando...");
+      this.velocidadSalto = this.velocidadAscenso;  // Aumentar velocidad de salto
+      this.saltoEnAire = true;  // Marcar que está en el aire
+    } else if (!gp.buttons[botonSaltoIndex].pressed) {
+      this.botonSaltoPresionado = false;
+    }
+  
+    // Gravedad y salto (caída)
+    if (this.saltoEnAire) {
+      const el = this.el;
+      let pos = el.object3D.position;
+  
+      // Cambiar la posición del personaje en el eje Y para simular el salto
+      pos.y += this.velocidadSalto;
+      this.velocidadSalto += this.gravedad;  // Aplicar la gravedad (más suave)
+
+      // Si el personaje toca el suelo (y vuelve a su posición original)
+      if (pos.y <= 1.6) {
+        pos.y = 1.6;  // Ajustar la altura para que esté sobre el suelo
+        this.saltoEnAire = false;  // Ya no está en el aire
+      }
+    }
+  
+    // Interacción
+    if (gp.buttons[botonInteraccionIndex].pressed && !this.botonInteraccionPresionado) {
+      this.botonInteraccionPresionado = true;
+      console.log("Interacción...");
+      // Agregar la lógica para interactuar con el objeto (puerta)
+      document.querySelector("#puerta1").click();
+    } else if (!gp.buttons[botonInteraccionIndex].pressed) {
+      this.botonInteraccionPresionado = false;
+    }
+  }
+});
+</script> -->
+
+
+
+<!-- <script>
+// Componente para mover el personaje
+AFRAME.registerComponent("got-se-mueve", {
+  schema: {
+    velocidad: { type: "number", default: 0.05 }
+  },
+  tick: function () {
+    const gamepads = navigator.getGamepads();
+    const gp = gamepads[0];
+    if (!gp) return;
+
+    const ejeX = gp.axes[0];  // Movimiento horizontal
+    const ejeY = gp.axes[1];  // Movimiento vertical
+
+    // Sensibilidad mínima para evitar movimientos no deseados
+    if (Math.abs(ejeX) < 0.1 && Math.abs(ejeY) < 0.1) return;
+
+    const el = this.el;
+    const pos = el.object3D.position;
+
+    // Obtener dirección desde la cámara
+    const camara = document.querySelector("[camera]").object3D;
+    const direccion = new THREE.Vector3();
+    camara.getWorldDirection(direccion);
+    
+    // Vector perpendicular para movimiento lateral
+    const lateral = new THREE.Vector3().crossVectors(direccion, new THREE.Vector3(0, 1, 0));
+
+    // Movimiento combinado según joystick
+    direccion.y = 0;
+    lateral.y = 0;
+    direccion.normalize();
+    lateral.normalize();
+
+    // Aplicar movimiento según dirección de la cámara
+    pos.addScaledVector(direccion, ejeY * this.data.velocidad);
+    pos.addScaledVector(lateral, -ejeX * this.data.velocidad);  // Invertimos el eje X
+  }
+});
+</script> -->
+
+<!-- <script>
+// Componente para rotar la cámara con límites invertidos
+AFRAME.registerComponent("rotar-camara", {
+schema: { sensibilidad: { type: "number", default: 5 }, limiteArriba: { type: "number", default: -60 }, limiteAbajo: { type: "number", default: 60 } },
+tick: function () {
+const gamepads = navigator.getGamepads();
+const gp = gamepads[0];
+if (!gp) return;
+
+// Movimiento en el eje X (rotación lateral de la cámara)
+const ejeX = gp.axes[2];
+if (Math.abs(ejeX) > 0.1) {
+  const rotation = this.el.getAttribute("rotation");
+  rotation.y -= ejeX * this.data.sensibilidad;
+  this.el.setAttribute("rotation", rotation);
+}
+
+// Movimiento en el eje Y (rotación vertical de la cámara)
+const ejeY = gp.axes[3]; // Eje vertical del joystick derecho
+if (Math.abs(ejeY) > 0.1) {
+  const rotation = this.el.getAttribute("rotation");
+  
+  // Invertir el eje Y (multiplicamos por -1 para invertir la dirección)
+  rotation.x -= ejeY * this.data.sensibilidad; // Ahora cuando mueves hacia arriba, la cámara sube
+
+  // Ajustar los límites de rotación
+  if (rotation.x < this.data.limiteArriba) {
+    rotation.x = this.data.limiteArriba;
+  } else if (rotation.x > this.data.limiteAbajo) {
+    rotation.x = this.data.limiteAbajo;
+  }
+
+  this.el.setAttribute("rotation", rotation);
+}
+}
+});
+</script> -->
+
+<!-- <script>
+window.addEventListener("gamepadconnected", function (e) {
+console.log("Control conectado:", e.gamepad);
+});
+
+window.addEventListener("gamepaddisconnected", function (e) {
+console.log("Control desconectado:", e.gamepad);
+});
+
+setInterval(() => {
+const gamepads = navigator.getGamepads();
+if (gamepads[0]) {
+console.log("Control activo: ", gamepads[0].id);
+} else {
+console.log("Esperando control...");
+}
+}, 2000);
+</script>
+-->
+
+
+
+
+<!-- <script>
+AFRAME.registerComponent("seguir-al-jugador", {
+  schema: {
+    offsetX: { type: "number", default: -0.6 },
+    offsetZ: { type: "number", default: -0.5 },
+    velocidad: { type: "number", default: 0.02 }
+  },
+  tick: function () {
+    const player = document.querySelector("#player").object3D;
+    const got = this.el.object3D;
+
+    const offset = new THREE.Vector3(this.data.offsetX, 0, this.data.offsetZ);
+    const targetPosition = new THREE.Vector3().copy(player.position);
+    const direction = new THREE.Vector3();
+
+    player.getWorldDirection(direction).applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI);
+    offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), player.rotation.y);
+    targetPosition.add(offset);
+
+    got.position.lerp(targetPosition, this.data.velocidad);
+  }
+});
+</script> -->
